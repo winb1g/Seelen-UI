@@ -1,0 +1,73 @@
+name: Build Custom Installer
+
+# Builds an unofficial x64 installer of this fork, with no repository secrets needed.
+#
+# Official builds are signed with upstream's private key, and the app only trusts upstream's public key (bundle
+# integrity check + updater). A fork can't sign with that key, so each run generates a throwaway key, signs the build
+# with it and swaps it in as the trusted key. The updater is also pointed at this fork instead of upstream, so
+# upstream releases can't overwrite the custom build.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/weg-per-app-volume-scroll
+
+jobs:
+  build:
+    runs-on: windows-2025
+    env:
+      TARGET: x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          rust-targets: ${{ env.TARGET }}
+          cache-key-prefix: rust-custom-${{ env.TARGET }}
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Create a throwaway signing key and trust it
+        shell: pwsh
+        run: |
+          $keyPath = Join-Path $env:RUNNER_TEMP "slu.key"
+          npx tauri signer generate --ci --write-keys $keyPath --password "ci-build"
+          if (-not (Test-Path $keyPath) -or -not (Test-Path "$keyPath.pub")) { throw "Key generation failed" }
+
+          $private = (Get-Content $keyPath -Raw).Trim()
+          $public = (Get-Content "$keyPath.pub" -Raw).Trim()
+          Write-Output "::add-mask::$private"
+          "TAURI_SIGNING_PRIVATE_KEY=$private" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "TAURI_SIGNING_PRIVATE_KEY_PASSWORD=ci-build" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+          $upstreamKey = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ4QjU1RUI0NEM0NzBERUIKUldUckRVZE10RjYxU0lpaERvdklYL05DVlg0Sk9EVngvaEgzZjMvU1NNemJTZXZ1K0dNVXU3ZkQK"
+          $utf8 = New-Object System.Text.UTF8Encoding($false)
+          foreach ($file in @("src/background/utils/integrity/checksums.rs", "src/background/utils/updater.rs")) {
+            $path = Join-Path $PWD $file
+            $text = [System.IO.File]::ReadAllText($path)
+            if (-not $text.Contains($upstreamKey)) { throw "Upstream public key not found in $file" }
+            [System.IO.File]::WriteAllText($path, $text.Replace($upstreamKey, $public), $utf8)
+          }
+
+          $updater = Join-Path $PWD "src/background/utils/updater.rs"
+          $text = [System.IO.File]::ReadAllText($updater)
+          if (-not $text.Contains("eythaann/Seelen-UI")) { throw "Upstream release URL not found in updater.rs" }
+          [System.IO.File]::WriteAllText($updater, $text.Replace("eythaann/Seelen-UI", "${{ github.repository }}"), $utf8)
+
+      - name: Build Hook DLL
+        run: cargo build --release --target ${{ env.TARGET }} -p sluhk
+
+      - name: Build (no bundle)
+        run: npx tauri build --ci --verbose --no-bundle --target ${{ env.TARGET }}
+
+      - name: Bundle installer
+        run: npx tauri bundle --ci --verbose --target ${{ env.TARGET }} --no-sign
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: seelen-ui-custom-x64-installer
+          path: target/${{ env.TARGET }}/release/bundle/nsis/*-setup.exe
+          if-no-files-found: error
+          retention-days: 30
