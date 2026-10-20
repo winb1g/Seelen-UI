@@ -18,17 +18,17 @@ plugin:
     const sessions = exe && defaultOutputDevice
       ? defaultOutputDevice.sessions.filter((s) => !s.isSystem && norm(s.iconPath) === exe)
       : [];
-    if (!sessions.length) return icon("IoVolumeOffOutline");
+    if (!sessions.length) return [icon("IoVolumeOffOutline"), " ", "--"];
     const level = Math.max(...sessions.map((s) => s.volume));
-    return sessions.every((s) => s.muted)
-      ? icon("IoVolumeMuteOutline")
-      : level >= 0.66
-        ? icon("IoVolumeHighOutline")
-        : level >= 0.33
-          ? icon("IoVolumeMediumOutline")
-          : level > 0
-            ? icon("IoVolumeLowOutline")
-            : icon("IoVolumeOffOutline");
+    if (sessions.every((s) => s.muted)) return [icon("IoVolumeMuteOutline"), " ", "muted"];
+    const glyph = level >= 0.66
+      ? icon("IoVolumeHighOutline")
+      : level >= 0.33
+        ? icon("IoVolumeMediumOutline")
+        : level > 0
+          ? icon("IoVolumeLowOutline")
+          : icon("IoVolumeOffOutline");
+    return [glyph, " ", (level * 100).toFixed(0) + "%"];
   tooltip: |-
     const norm = (p) => (p ? String(p).replaceAll("/", "\\").toLowerCase() : null);
     const exe = norm(focusedApp && focusedApp.exe);
