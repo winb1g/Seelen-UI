@@ -11,6 +11,7 @@
   import { CssHandled } from "libs/ui/svelte/utils/animations.ts";
   import { getBadge } from "../../state/badge.svelte.ts";
   import Icon from "libs/ui/svelte/components/Icon/Icon.svelte";
+  import { getAppAudio, stepAppVolume, toggleAppMute } from "../../state/audio.svelte.ts";
 
   interface Props {
     item: AppOrFileWegItem;
@@ -34,7 +35,44 @@
 
   let itemEl: HTMLDivElement | null = $state(null);
 
-  function onClick() {
+  const audio = $derived(getAppAudio(windows));
+  const tooltip = $derived.by(() => {
+    if (!audio) return item.displayName;
+    const state = audio.muted ? $t("volume.muted") : $t("volume.level", { 0: String(Math.round(audio.volume * 100)) });
+    return `${item.displayName} - ${state}`;
+  });
+
+  // Scrolling over an app that is playing audio changes the volume of that app only. Apps without audio keep the
+  // default behavior (e.g. scrolling an overflowing dock). Registered by hand because it needs `passive: false`.
+  const WHEEL_NOTCH = 100;
+  let wheelAccumulator = 0;
+  $effect(() => {
+    const el = itemEl;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      const current = getAppAudio(windows);
+      if (!current || e.deltaY === 0) return;
+      e.preventDefault();
+
+      // touchpads emit many small deltas, a mouse wheel emits one ~100 delta per notch
+      wheelAccumulator += e.deltaY;
+      const notches = Math.trunc(wheelAccumulator / WHEEL_NOTCH);
+      if (notches === 0) return;
+      wheelAccumulator -= notches * WHEEL_NOTCH;
+      stepAppVolume(current, -notches);
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  });
+
+  function onClick(e: MouseEvent) {
+    if (e.ctrlKey && audio) {
+      toggleAppMute(audio);
+      return;
+    }
+
     if (windows.length > 1) {
       triggerPreviewWidget(itemEl!, windows);
       return;
@@ -77,7 +115,7 @@
     role="menuitem"
     tabindex="0"
     class="weg-item"
-    data-tooltip={item.displayName}
+    data-tooltip={tooltip}
     data-tooltip-origin-y={settingsState.tooltipOrigin.y}
     data-tooltip-origin-x={settingsState.tooltipOrigin.x}
     data-tooltip-align-x={settingsState.popupAlignX}
