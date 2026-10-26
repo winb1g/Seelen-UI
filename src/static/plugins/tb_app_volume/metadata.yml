@@ -1,0 +1,14 @@
+id: "@default/app-volume"
+metadata:
+  displayName: !extend i18n/display_name.yml
+  description: !extend i18n/description.yml
+icon: IoVolumeMediumOutline
+target: "@seelen/fancy-toolbar"
+plugin:
+  scopes:
+    - Media
+    - FocusedApp
+  template: !include plugin/template.js
+  tooltip: !include plugin/tooltip.js
+  onWheelUp: !include plugin/on_wheel_up.js
+  onWheelDown: !include plugin/on_wheel_down.js
