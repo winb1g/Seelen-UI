@@ -61,15 +61,22 @@ impl UserAppsManager {
                     continue;
                 }
 
-                Self::instance().interactable_windows.retain(|w| {
-                    let window = Window::from(w.hwnd);
-                    if window.is_interactable_and_not_hidden() {
-                        true
-                    } else {
+                // Checked on a snapshot: these Win32 queries can block for seconds on a hung
+                // window, and the WinEvent dispatcher needs this lock on every event.
+                let stale: Vec<Window> = Self::instance()
+                    .interactable_windows
+                    .map(|w| Window::from(w.hwnd))
+                    .into_iter()
+                    .filter(|window| !window.is_interactable_and_not_hidden())
+                    .collect();
+                if !stale.is_empty() {
+                    Self::instance()
+                        .interactable_windows
+                        .retain(|w| !stale.iter().any(|window| window.address() == w.hwnd));
+                    for window in stale {
                         Self::send(UserAppWinEvent::Removed(window.address()));
-                        false
                     }
-                });
+                }
 
                 // Scan for windows that now qualify but were never tracked (e.g. style/frame
                 // state was not settled at creation time).

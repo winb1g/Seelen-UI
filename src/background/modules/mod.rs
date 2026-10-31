@@ -47,7 +47,20 @@ macro_rules! event_manager {
                         for event in rx {
                             let subscribers = SUBSCRIBERS.load_full();
                             for (_id, callback, _) in subscribers.iter() {
-                                callback(event.clone());
+                                // A panicking callback (e.g. a TracedMutex timeout) must only skip
+                                // this event: unwinding out of here would kill the dispatcher for
+                                // good, silently stopping every subscriber while events pile up.
+                                let event = event.clone();
+                                let result =
+                                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                        callback(event)
+                                    }));
+                                if result.is_err() {
+                                    log::error!(
+                                        "{} subscriber panicked, event skipped",
+                                        stringify!($name)
+                                    );
+                                }
                             }
                         }
                     });
@@ -102,4 +115,36 @@ macro_rules! event_manager {
             }
         }
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+    use std::time::{Duration, Instant};
+
+    struct TestEvents;
+    event_manager!(TestEvents, u32);
+
+    #[test]
+    fn panicking_subscriber_does_not_stop_the_dispatcher() {
+        let received = Arc::new(AtomicUsize::new(0));
+        TestEvents::subscribe(|n| assert_ne!(n, 1, "simulated subscriber failure"));
+        let counter = received.clone();
+        TestEvents::subscribe(move |_| {
+            counter.fetch_add(1, Ordering::SeqCst);
+        });
+
+        for n in 0..3 {
+            TestEvents::send(n);
+        }
+
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while received.load(Ordering::SeqCst) < 3 && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        assert_eq!(received.load(Ordering::SeqCst), 3);
+    }
 }
