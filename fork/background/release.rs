@@ -9,7 +9,7 @@
 /// updater signature of the installer and the `SHA256SUMS.sig` of the bundled static files.
 ///
 /// Empty until the fork key pair is generated; the release workflow refuses to build while it is empty.
-pub const SIGN_PUB_KEY: &str = "";
+pub const SIGN_PUB_KEY: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFEMzE0QzVBN0Y5RDMzRDEKUldUUk01MS9Xa3d4clRSVFQ4UnNYOTJXVFgvdk15MlFIaWZmd1lUZ1N3TklManIvTFN3N3FvSk0K";
 
 /// `latest.json` of the latest fork release, published by `.github/workflows/fork-release.yml`.
 pub const RELEASE_ENDPOINT: &str =
