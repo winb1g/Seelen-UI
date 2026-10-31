@@ -11,6 +11,7 @@
   import { CssHandled } from "libs/ui/svelte/utils/animations.ts";
   import { getBadge } from "../../state/badge.svelte.ts";
   import Icon from "libs/ui/svelte/components/Icon/Icon.svelte";
+  import { appVolumeControls } from "fork/weg/appVolume.svelte.ts";
 
   interface Props {
     item: AppOrFileWegItem;
@@ -86,6 +87,7 @@
     onauxclick={onAuxClick}
     oncontextmenu={onContextMenu}
     onkeypress={() => {}}
+    {@attach appVolumeControls(() => item, () => windows)}
   >
     <FileIcon class="weg-item-icon" path={item.relaunch?.icon || item.path} umid={item.umid} />
     {#if itemLabel}
