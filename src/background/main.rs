@@ -24,6 +24,9 @@ mod virtual_desktops;
 mod widgets;
 mod windows_api;
 
+#[path = "../../fork/background/mod.rs"]
+mod fork;
+
 #[macro_use]
 extern crate rust_i18n;
 i18n!("background/i18n", fallback = "en");
@@ -165,6 +168,7 @@ async fn setup(app_handle: &tauri::AppHandle<tauri::Wry>) -> Result<()> {
     warn_if_elevated(app_handle);
     telemetry::start_telemetry();
     backups::infrastructure::start_backup_sync();
+    fork::init();
     Ok(())
 }
 
