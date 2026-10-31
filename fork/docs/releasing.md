@@ -21,6 +21,9 @@ npm and Discord publishing.
 
 ## One-time setup
 
+A local AI agent can do all of this (plus the repo rename and first install) by following
+[first-time-setup.md](first-time-setup.md). By hand:
+
 ### 1. Signing key pair
 
 The fork has **one long-lived key pair**. Installed copies only accept updates signed by the key whose public half they

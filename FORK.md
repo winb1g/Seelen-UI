@@ -3,7 +3,8 @@
 Personal fork of [eythaann/Seelen-UI](https://github.com/eythaann/Seelen-UI) with bug fixes and small enhancements. The
 overriding goal is that **upstream can be merged at any time with no (or trivial) conflicts**.
 
-Docs: [releasing](fork/docs/releasing.md) · [installing & updating](fork/docs/updating.md) · [CI](fork/docs/ci.md)
+Docs: [first-time setup](fork/docs/first-time-setup.md) · [releasing](fork/docs/releasing.md) ·
+[installing & updating](fork/docs/updating.md) · [CI](fork/docs/ci.md)
 
 ## Rules
 
