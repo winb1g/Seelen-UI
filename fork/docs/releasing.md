@@ -12,7 +12,7 @@ Release → Run workflow) when needed.
 | Preflight   | `fork-check.ts preflight`: public key set, update endpoint points at this repo, signing secret present. Fails in seconds instead of after the build.                                                                       |
 | Checks      | Upstream's `ci.yml` + `fork-ci.yml` (see [ci.md](ci.md)).                                                                                                                                                                  |
 | Version     | `<package.json version>-fork.<UTC yymmddHHMM>`, e.g. `2.8.11-fork.2610311530`. Set in CI only with upstream's `scripts/versionish.ts ci`, so `package.json` is never committed. Always increasing, so the updater sees it. |
-| Build       | Windows x64 NSIS installer (`tauri build`), signed with the fork key: updater signature (`.sig`) and `SHA256SUMS.sig` of the bundled files.                                                                                |
+| Build       | Windows x64 NSIS installer (`tauri build --no-bundle`, then `tauri bundle --no-sign` as upstream does), signed with the fork key: updater signature (`.sig`) and `SHA256SUMS.sig` of the bundled files.                    |
 | Publish     | `fork-check.ts key-match` refuses a signature that installed copies couldn't verify. Then a GitHub release `v<version>` with the installer, `.sig` and `latest.json` (upstream's `generate-update-manifest` action).       |
 | Mark latest | Last step, so the updater only ever sees complete releases.                                                                                                                                                                |
 
