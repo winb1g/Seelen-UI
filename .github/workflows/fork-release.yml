@@ -83,11 +83,17 @@ jobs:
       - name: Build Hook DLL
         run: cargo build --release --target ${{ env.TARGET }} -p sluhk
 
+      # Two stages like upstream's workflows: compile (the key signs SHA256SUMS in `src/build.rs`), then bundle
+      # unsigned. A signing bundler verifies against `plugins.updater.pubkey` in tauri.conf.json, which upstream
+      # leaves empty (the key lives in code), so it fails; the installer is signed in the next step instead.
       - name: Build installer
+        shell: bash
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: npx tauri build --ci --verbose --target ${{ env.TARGET }}
+        run: |
+          npx tauri build --ci --verbose --no-bundle --target ${{ env.TARGET }}
+          npx tauri bundle --ci --verbose --target ${{ env.TARGET }} --no-sign --no-binary-patching
 
       # Asset names without spaces (GitHub would rename them), containing "x64" for the update manifest.
       - name: Collect and sign installer
