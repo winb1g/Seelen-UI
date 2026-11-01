@@ -253,6 +253,17 @@ Deno.test("IconPackManager", async (t) => {
       },
     );
 
+    await t.step(
+      "should not match by filename against absolute entries of another install",
+      () => {
+        const ctx = new IconPackManagerTestContext(["b", "a"]);
+        // both packs only have "C:\Windows\explorer.exe", which is a different file
+        assertNull(
+          ctx.instance.getIconPath({ path: "D:\\Portable\\explorer.exe" }),
+        );
+      },
+    );
+
     await t.step("should match files by extension with priority order", () => {
       const ctx = new IconPackManagerTestContext(["b", "a"]); // 'a' has priority
 
