@@ -202,8 +202,10 @@ export class IconPackManager {
             return true;
           }
 
-          // only search for filename in case of executable files
-          if (extension === "exe") {
+          // only search for filename in case of executable files. Absolute entries belong to a
+          // specific file, so they don't match other installs sharing the same exe name
+          // (e.g. "zen.exe" of Zen Browser and Zen Twilight).
+          if (extension === "exe" && !isAbsolutePath(e.path)) {
             const filename = lowerPath.split("\\").pop();
             // Use separator-aware check to avoid partial name matches (e.g. "mysteam.exe" != "steam.exe")
             if (filename && (e.path === filename || e.path.endsWith("\\" + filename))) {
@@ -357,4 +359,9 @@ function resolveAsSrc(icon: IIcon): IIcon {
     mask: icon.mask ? convertFileSrc(icon.mask) : null,
     isAproximatelySquare: icon.isAproximatelySquare,
   };
+}
+
+/** Drive (`c:\...`) or UNC (`\\server\...`) path, expects the path already lowercased. */
+function isAbsolutePath(path: string): boolean {
+  return /^[a-z]:\\/.test(path) || path.startsWith("\\\\");
 }
