@@ -8,7 +8,7 @@ use crate::{
 
 use super::is_running_as_appx;
 
-pub static SIGN_PUB_KEY: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ4QjU1RUI0NEM0NzBERUIKUldUckRVZE10RjYxU0lpaERvdklYL05DVlg0Sk9EVngvaEgzZjMvU1NNemJTZXZ1K0dNVXU3ZkQK";
+pub static SIGN_PUB_KEY: &str = crate::fork::release::SIGN_PUB_KEY;
 
 pub async fn check_for_updates() -> Result<Option<Update>> {
     if tauri::is_dev() || has_fixed_runtime() || is_running_as_appx() {
@@ -24,7 +24,7 @@ pub async fn check_for_updates() -> Result<Option<Update>> {
             .updater_builder()
             .pubkey(SIGN_PUB_KEY)
             .endpoints(vec![
-                "https://github.com/eythaann/Seelen-UI/releases/download/nightly/latest.json"
+                crate::fork::release::NIGHTLY_ENDPOINT
                     .try_into()
                     .expect("Failed to parse url"),
             ])?
@@ -38,7 +38,7 @@ pub async fn check_for_updates() -> Result<Option<Update>> {
             .updater_builder()
             .pubkey(SIGN_PUB_KEY)
             .endpoints(vec![
-                "https://github.com/eythaann/Seelen-UI/releases/latest/download/latest.json"
+                crate::fork::release::RELEASE_ENDPOINT
                     .try_into()
                     .expect("Failed to parse url"),
             ])?
