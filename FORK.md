@@ -60,8 +60,10 @@ The first `code span` of the _Hook_ column must appear verbatim in the file: CI 
 Upstream files edited directly (a fix that can't live behind a hook), until upstream merges an equivalent. CI fails when
 a PR changes an upstream file listed in neither table.
 
-| Upstream file | Change | Upstream PR |
-| ------------- | ------ | ----------- |
+| Upstream file                           | Change                                                                         | Upstream PR |
+| --------------------------------------- | ------------------------------------------------------------------------------ | ----------- |
+| `libs/core/src/state/icon_pack.ts`      | Exe filename fallback skips absolute entries of other installs (same exe name) | —           |
+| `libs/core/src/state/icon_pack.test.ts` | Test for the filename fallback fix                                             | —           |
 
 ## Upstream workflows
 
